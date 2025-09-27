@@ -33,3 +33,42 @@ db.books.find().skip(0).limit(5);
 
 // Pagination (page 2)
 db.books.find().skip(5).limit(5);
+
+// Average price of books by genre
+db.books.aggregate([
+  { $group: { _id: "$genre", avgPrice: { $avg: "$price" } } }
+]);
+
+// Author with the most books
+db.books.aggregate([
+  { $group: { _id: "$author", totalBooks: { $sum: 1 } } },
+  { $sort: { totalBooks: -1 } },
+  { $limit: 1 }
+]);
+
+// Group books by publication decade
+db.books.aggregate([
+  {
+    $group: {
+      _id: { $floor: { $divide: ["$published_year", 10] } },
+      count: { $sum: 1 }
+    }
+  },
+  {
+    $project: {
+      decade: { $multiply: ["$_id", 10] },
+      count: 1,
+      _id: 0
+    }
+  },
+  { $sort: { decade: 1 } }
+]);
+
+// Index on title
+db.books.createIndex({ title: 1 });
+
+// Compound index on author + published_year
+db.books.createIndex({ author: 1, published_year: -1 });
+
+// Use explain() to check query performance
+db.books.find({ title: "Clean Code" }).explain("executionStats");
